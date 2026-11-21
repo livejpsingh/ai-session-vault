@@ -23,6 +23,10 @@ public class ChatSession {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "tenant_id", nullable = false)
+    @Builder.Default
+    private String tenantId = "default";
+
     @Column(name = "external_session_id", unique = true)
     private String externalSessionId;
 

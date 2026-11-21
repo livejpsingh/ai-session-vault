@@ -60,6 +60,9 @@ public class MemoryController {
                 .active(true)
                 .build();
         Memory stored = extractionEngine.storeMemory(memory);
+        if (memory.getProjectId() != null) {
+            optimizationEngine.invalidateCache(memory.getProjectId());
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(stored);
     }
 

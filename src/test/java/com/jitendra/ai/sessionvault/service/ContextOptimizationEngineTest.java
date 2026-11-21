@@ -133,4 +133,11 @@ class ContextOptimizationEngineTest {
         assertThat(response).isNotNull();
         assertThat(response.getTokenUsage().getUsed()).isLessThanOrEqualTo(50);
     }
+
+    @Test
+    @DisplayName("Invalidating cache for project calls deleteByProjectId (R8 Mitigation)")
+    void invalidateCache_CallsRepository() {
+        engine.invalidateCache("my-project");
+        verify(cacheRepository, times(1)).deleteByProjectId("my-project");
+    }
 }

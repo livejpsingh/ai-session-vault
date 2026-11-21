@@ -12,19 +12,43 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Stateless API Key Authentication Filter supporting Constant-Time validation
+ * and a Dual-Key Overlap Window for zero-downtime key rotation (Mitigates Risk R1).
+ */
 @Slf4j
 public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
-    private final String expectedApiKey;
+    private final List<String> expectedApiKeys;
     private final ObjectMapper objectMapper;
 
     public ApiKeyAuthenticationFilter(String expectedApiKey, ObjectMapper objectMapper) {
-        this.expectedApiKey = expectedApiKey;
+        this(parseKeys(expectedApiKey), objectMapper);
+    }
+
+    public ApiKeyAuthenticationFilter(List<String> expectedApiKeys, ObjectMapper objectMapper) {
+        this.expectedApiKeys = expectedApiKeys != null ? expectedApiKeys : Collections.emptyList();
         this.objectMapper = objectMapper;
+    }
+
+    private static List<String> parseKeys(String keyString) {
+        if (keyString == null || keyString.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(keyString.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     @Override
@@ -41,7 +65,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
         String apiKey = extractApiKey(request);
 
-        if (apiKey != null && apiKey.equals(expectedApiKey)) {
+        if (apiKey != null && isValidApiKey(apiKey)) {
             ApiKeyAuthenticationToken authentication = new ApiKeyAuthenticationToken(apiKey);
             SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);
@@ -60,9 +84,24 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Constant-time comparison across all active keys in the rotation window.
+     */
+    private boolean isValidApiKey(String candidate) {
+        byte[] candidateBytes = candidate.getBytes(StandardCharsets.UTF_8);
+        for (String expected : expectedApiKeys) {
+            byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+            if (MessageDigest.isEqual(candidateBytes, expectedBytes)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean isPublicEndpoint(String path) {
         return path.startsWith("/actuator/health") ||
                path.startsWith("/actuator/info") ||
+               path.startsWith("/actuator/metrics") ||
                path.equals("/error") ||
                path.startsWith("/swagger-ui") ||
                path.startsWith("/v3/api-docs") ||

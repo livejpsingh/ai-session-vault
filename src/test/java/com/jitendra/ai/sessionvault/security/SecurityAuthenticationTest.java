@@ -122,4 +122,28 @@ class SecurityAuthenticationTest {
 
         assertThat(response.getStatus()).isEqualTo(200);
     }
+
+    @Test
+    @DisplayName("Dual-key overlap window authenticates both primary and secondary rotated keys (R1 Mitigation)")
+    void dualKeyRotation_AuthenticatesBothKeys() throws ServletException, IOException {
+        ApiKeyAuthenticationFilter dualFilter = new ApiKeyAuthenticationFilter(
+                java.util.List.of("active-key-2026", "previous-key-2025"),
+                objectMapper
+        );
+
+        // Test with previous key
+        MockHttpServletRequest req1 = new MockHttpServletRequest("GET", "/api/sessions");
+        req1.addHeader("X-API-KEY", "previous-key-2025");
+        MockHttpServletResponse resp1 = new MockHttpServletResponse();
+        dualFilter.doFilterInternal(req1, resp1, new MockFilterChain());
+        assertThat(resp1.getStatus()).isEqualTo(200);
+
+        // Test with active key
+        SecurityContextHolder.clearContext();
+        MockHttpServletRequest req2 = new MockHttpServletRequest("GET", "/api/sessions");
+        req2.addHeader("X-API-KEY", "active-key-2026");
+        MockHttpServletResponse resp2 = new MockHttpServletResponse();
+        dualFilter.doFilterInternal(req2, resp2, new MockFilterChain());
+        assertThat(resp2.getStatus()).isEqualTo(200);
+    }
 }

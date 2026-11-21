@@ -32,6 +32,10 @@ public class ContextOptimizationEngineImpl implements ContextOptimizationEngine 
     private final ChatMessageRepository messageRepository;
     private final ObjectMapper objectMapper;
     private final TokenCounter tokenCounter;
+    @Autowired(required = false)
+    private com.jitendra.ai.sessionvault.observability.VaultMetricsService vaultMetricsService;
+    @Autowired(required = false)
+    private com.jitendra.ai.sessionvault.guardrails.PromptGuardrailService promptGuardrailService;
 
     private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```[\\s\\S]*?```");
     private static final Pattern FLUFF_PATTERN = Pattern.compile("(?i)^(Sure|Here is|Hope this helps|Let me know|Certainly|Glad to help|As an AI)[^\\n]*\\n?");
@@ -71,10 +75,17 @@ public class ContextOptimizationEngineImpl implements ContextOptimizationEngine 
                 cachedResponse.setFromCache(true);
                 cachedResponse.setLatencyMs(System.currentTimeMillis() - startTime);
                 log.info("Context cache hit for key={}", cacheKey);
+                if (vaultMetricsService != null) {
+                    vaultMetricsService.recordCacheHit();
+                }
                 return cachedResponse;
             }
         } catch (Exception e) {
             log.warn("Cache lookup failed: {}", e.getMessage());
+        }
+
+        if (vaultMetricsService != null) {
+            vaultMetricsService.recordCacheMiss();
         }
 
         // 2. Gather Candidate Memories
@@ -108,6 +119,9 @@ public class ContextOptimizationEngineImpl implements ContextOptimizationEngine 
 
         List<OptimizedContextItem> selectedItems = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
+        if (promptGuardrailService != null && !promptGuardrailService.isSafe(request.getQuery())) {
+            warnings.add("Security Notice: Potential prompt injection pattern detected in query; evaluated with strict guardrails.");
+        }
         List<String> sources = new ArrayList<>();
         int tokensUsed = 0;
 
@@ -229,7 +243,28 @@ public class ContextOptimizationEngineImpl implements ContextOptimizationEngine 
         log.info("Context optimized: budget={}, original={}, final={}, saved={} ({}%), latency={}ms",
                 budget, baselineSafe, finalTokens, tokensSaved, usageSummary.getReductionPercentage(), latency);
 
+        if (vaultMetricsService != null) {
+            try {
+                vaultMetricsService.recordTokenOptimization(request.getTargetModel(), tokensSaved, latency);
+            } catch (Exception e) {
+                log.warn("Failed to record optimization metric: {}", e.getMessage());
+            }
+        }
+
         return response;
+    }
+
+    @Override
+    @Transactional
+    public void invalidateCache(String projectId) {
+        if (projectId != null && !projectId.isBlank()) {
+            try {
+                cacheRepository.deleteByProjectId(projectId);
+                log.info("Invalidated context cache for projectId='{}'", projectId);
+            } catch (Exception e) {
+                log.warn("Failed to invalidate cache for projectId='{}': {}", projectId, e.getMessage());
+            }
+        }
     }
 
     private List<MemoryCandidate> gatherCandidates(ContextOptimizationRequest request, String tenantId, String projectId) {

@@ -13,5 +13,7 @@ public interface ContextCacheRepository extends JpaRepository<ContextCacheEntry,
 
     Optional<ContextCacheEntry> findByCacheKeyAndExpiresAtAfter(String cacheKey, OffsetDateTime now);
 
+    void deleteByProjectId(String projectId);
+
     void deleteByExpiresAtBefore(OffsetDateTime now);
 }

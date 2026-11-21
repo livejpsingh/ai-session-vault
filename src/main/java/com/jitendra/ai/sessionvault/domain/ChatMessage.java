@@ -22,6 +22,10 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "tenant_id", nullable = false)
+    @Builder.Default
+    private String tenantId = "default";
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "session_id", nullable = false)
     private ChatSession session;
