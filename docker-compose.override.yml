@@ -1,0 +1,19 @@
+# docker-compose.override.yml
+# Local developer overrides. Not committed to production deployments.
+# Provides a hot-reload-friendly local stack with relaxed logging.
+services:
+  postgres:
+    # Expose on localhost only (not 0.0.0.0) for local dev security
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  app:
+    # Expose locally only
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      # Override with your real key; hooks/session-start.ps1 reads VAULT_API_KEY too
+      VAULT_API_KEY: ${VAULT_API_KEY:-vault-secret-key-2026}
+      # Verbose logging for local dev
+      LOGGING_LEVEL_COM_JITENDRA: DEBUG
+      SPRING_JPA_SHOW_SQL: "false"

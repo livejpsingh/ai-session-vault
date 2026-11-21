@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-session-vault
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ai_session_vault}
+    username: ${SPRING_DATASOURCE_USERNAME:vault_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:vault_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:vault-genai-placeholder-key}
+    mcp:
+      server:
+        name: ai-session-vault
+        version: 1.0.0
+        type: sync
+        # streamable-http is the current MCP spec transport (Antigravity expects /mcp endpoint)
+        transport: streamable-http
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+vault:
+  security:
+    api-key: ${VAULT_API_KEY:vault-secret-key-2026}
+  storage:
+    attachments-dir: ${VAULT_ATTACHMENTS_DIR:./vault-storage/attachments}

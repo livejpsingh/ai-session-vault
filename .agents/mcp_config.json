@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ai-session-vault": {
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "X-API-KEY": "${VAULT_API_KEY:-vault-secret-key-2026}"
+      }
+    }
+  }
+}

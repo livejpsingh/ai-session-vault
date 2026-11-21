@@ -1,0 +1,19 @@
+{
+  "vault-session-sync": {
+    "description": "Auto-sync Antigravity conversation transcripts to AI Session Vault (local MCP memory server). SessionStart loads existing history; Stop saves each turn.",
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "pwsh -NoProfile -NonInteractive -File .agents/hooks/session-start.ps1",
+        "timeout": 15
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "pwsh -NoProfile -NonInteractive -File .agents/hooks/session-stop.ps1",
+        "timeout": 15
+      }
+    ]
+  }
+}
