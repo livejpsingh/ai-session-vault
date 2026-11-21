@@ -27,7 +27,7 @@ flowchart TD
     subgraph CD["CD Pipeline (.github/workflows/cd.yml)"]
         subgraph PreDeployment["Mandatory Pre-Deployment Gates"]
             Gate1["Gate 1: Credential Leakage Audit"]
-            Gate2["Gate 2: DB Migration Dry-Run (Flyway V1-V4 on pgvector)"]
+            Gate2["Gate 2: DB Migration Dry-Run (Flyway V1-V5 on pgvector)"]
             Gate3["Gate 3: Docker Build & Trivy CVE Security Scan"]
             Gate4["Gate 4: Live Container Smoke Test & Health / Auth Probes"]
         end
@@ -78,15 +78,16 @@ The CD workflow ensures that **no broken, vulnerable, or untested build is ever 
 
 ### Gate 2: Database Migration Dry-Run & Schema Integrity
 - Spins up a clean `pgvector/pgvector:pg16` container.
-- Applies Flyway migrations `V1`, `V2`, `V3`, and `V4`.
-- Queries the PostgreSQL system catalog to verify all required tables exist:
-  * `chat_sessions`
-  * `chat_messages`
+- Applies Flyway migrations `V1`, `V2`, `V3`, `V4`, and `V5`.
+- Queries the PostgreSQL system catalog to verify all required tables and multi-tenancy columns exist:
+  * `chat_sessions` (with `tenant_id`)
+  * `chat_messages` (with `tenant_id`)
   * `session_chunks`
-  * `memories`
+  * `memories` (with `tenant_id`)
   * `memory_versions`
-  * `token_usage_metrics`
-  * `context_cache`
+  * `token_usage_metrics` (with `tenant_id`)
+  * `context_cache` (with `tenant_id`)
+  * `outbox_events` (for transactional event dispatching)
 
 ### Gate 3: Docker Container Build & Security Scanning (Trivy)
 - Packages the Spring Boot JAR and builds the container image using the multi-stage Alpine Dockerfile.

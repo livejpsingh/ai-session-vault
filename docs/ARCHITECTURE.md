@@ -1,17 +1,17 @@
-# System Architecture Design Document: AI Session Vault 2.0
-### Intelligent Agent Memory, Hybrid RAG & Knapsack Token Optimization Platform
+# System Architecture Design Document: AI Session Vault 3.0
+### Enterprise Intelligent Agent Memory, Hybrid RAG, Outbox Resilience & Token Optimization Platform
 
-**Document Version:** 2.0.0  
+**Document Version:** 3.0.0  
 **Status:** Approved & Production-Ready  
 **Target Runtimes:** Java 21 LTS / Spring Boot 4.1.2 / Spring AI 2.0.1  
-**Persistence Tier:** PostgreSQL 16/18 with `pgvector` & GIN Full-Text Search  
-**Protocol Integrations:** Model Context Protocol (MCP 19 Tools), REST API, VS Code Lifecycle Hooks  
+**Persistence Tier:** PostgreSQL 16/18 with `pgvector` & GIN Full-Text Search (Flyway V1–V5)  
+**Protocol Integrations:** Model Context Protocol (MCP 19 Tools), REST API, VS Code Lifecycle Hooks, Transactional Outbox  
 
 ---
 
 ## 1. Executive Summary & Architectural Goals
 
-**AI Session Vault 2.0** is an enterprise-grade conversation persistence, hierarchical memory, and token-budget optimization platform designed for autonomous AI agents (Google Antigravity, GitHub Copilot, Claude Code, Cursor) and developer engineering teams.
+**AI Session Vault 3.0** is an enterprise-grade conversation persistence, hierarchical memory, outbox-resilient event dispatching, and token-budget optimization platform designed for autonomous AI agents (Google Antigravity, GitHub Copilot, Claude Code, Cursor) and developer engineering teams.
 
 ```
        +-------------------------------------------------------------+
@@ -21,13 +21,18 @@
                                       | (Raw Transcripts: 50,000+ Tokens)
                                       v
        +-------------------------------------------------------------+
-       |                   AI SESSION VAULT 2.0 CORE                 |
+       |                   AI SESSION VAULT 3.0 CORE                 |
        |  +-------------------------------------------------------+  |
+       |  |  Zero-Downtime Dual-Key Security & Rate Limiting      |  |
+       |  |  Prompt Injection Guardrails & Secret Redaction Engine|  |
+       |  |  Transactional Outbox (outbox_events table)           |  |
        |  |  4-Tier Memory Hierarchy (L1, L2, L3, L4 Archive)     |  |
        |  |  $0 Heuristic Memory Extraction Engine (Regex/AST)    |  |
        |  |  Knapsack Token Budget Optimizer (70%-90% Reduction)  |  |
-       |  |  SHA-256 Context Cache (<30ms Latency)                |  |
+       |  |  SHA-256 Context Cache (<30ms Latency) + Invalidation|  |
+       |  |  Thin Spring AI PgVectorStoreAdapter (HNSW Cosine)    |  |
        |  |  Spring AI MCP Server (19 Tools: 13 Memory + 6 Vault) |  |
+       |  |  Micrometer Observability (vault.* Metrics)           |  |
        |  +-------------------------------------------------------+  |
        +------------------------------+------------------------------+
                                       | (Optimized Payload: <=800 Tokens)
@@ -60,12 +65,13 @@ flowchart TD
         Hooks["Lifecycle Hook Interceptors<br/>(SessionStart / Stop Events)"]
     end
 
-    subgraph SecurityGate["Stateless Security Boundary"]
-        ApiKeyFilter["ApiKeyAuthenticationFilter<br/>(Constant-time X-API-KEY / query param)"]
-        SecConfig["VaultSecurityConfig<br/>(Stateless Session, CSRF Disabled)"]
+    subgraph SecurityGate["Stateless Security & Protection Boundary"]
+        ApiKeyFilter["ApiKeyAuthenticationFilter<br/>(Dual-Key Grace Window, Constant-Time)"]
+        RateLimiter["RateLimitingFilter<br/>(DoS Protection & Token Bucket)"]
+        SecConfig["VaultSecurityConfig<br/>(Stateless Session, Whitelisted Health)"]
     end
 
-    subgraph CoreEngine["AI Session Vault 2.0 Core Platform"]
+    subgraph CoreEngine["AI Session Vault 3.0 Core Platform"]
         subgraph GatewayMCP["Ingress Controllers & Gateway"]
             MCP_Server["Spring AI MCP Server (/mcp)<br/>19 Tools (13 Memory + 6 Session)"]
             REST_Gateway["AgentContextGateway (/api/agents/context)"]
@@ -74,12 +80,27 @@ flowchart TD
             REST_Ingest["TranscriptIngestionController (/api/transcripts/ingest)"]
         end
 
-        subgraph Engines["Intelligence & Optimization Engines"]
+        subgraph GuardrailsTier["Enterprise Guardrails & Redaction"]
+            PromptGuard["PromptGuardrailService<br/>(Adversarial Prompt Injection Detection)"]
+            SecretRedact["SecretRedactionService<br/>(Automated Token & Key Sanitization)"]
+        end
+
+        subgraph Engines["Intelligence, Optimization & Adapters"]
             Extractor["MemoryExtractionEngine<br/>($0-Cost Deterministic Parser)"]
             Optimizer["ContextOptimizationEngine<br/>(Knapsack Token Budget Packer)"]
             Tokenizer["Model Tokenizers<br/>(JTokkit BPE / BertWordPiece)"]
-            CacheMgr["SHA-256 Context Cache Manager<br/>(Sub-ms Memory Lookup)"]
+            CacheMgr["SHA-256 Context Cache Manager<br/>(Sub-ms Memory Lookup + Eviction)"]
+            VectorAdapter["VaultVectorStoreAdapter<br/>(Thin Spring AI Adapter over HNSW)"]
             SearchEngine["Hybrid RAG Search Service<br/>(Dense Vector + GIN FTS + RRF)"]
+        end
+
+        subgraph OutboxEngine["Resilience & Transactional Outbox"]
+            OutboxWorker["OutboxEventWorker<br/>(Zero Message Loss Poller)"]
+            EventPub["VaultEventPublisher<br/>(Decoupled Ingestion Events)"]
+        end
+
+        subgraph MetricsTier["Observability & Metrics"]
+            VaultMetrics["VaultMetricsService<br/>(Micrometer vault.* Counters & Timers)"]
         end
 
         subgraph MemoryHierarchy["4-Tier Hierarchical Memory Model"]
@@ -96,16 +117,18 @@ flowchart TD
             CacheRepo["ContextCacheRepository"]
             SessionRepo["ChatSessionRepository"]
             MsgRepo["ChatMessageRepository"]
+            OutboxRepo["OutboxEventRepository"]
         end
     end
 
-    subgraph PersistenceTier["PostgreSQL 16/18 + pgvector"]
-        MemTable[("memories<br/>(GIN FTS + pgvector HNSW)")]
+    subgraph PersistenceTier["PostgreSQL 16/18 + pgvector (Flyway V1-V5)"]
+        MemTable[("memories<br/>(GIN FTS + pgvector HNSW + tenant_id)")]
         VerTable[("memory_versions<br/>(Audit History)")]
         MetricTable[("token_usage_metrics<br/>(Savings Analytics)")]
         CacheTable[("context_cache<br/>(SHA-256 Hashes)")]
-        SessionTable[("chat_sessions")]
-        MsgTable[("chat_messages<br/>(FTS fts_vector)")]
+        SessionTable[("chat_sessions<br/>(tenant_id default)")]
+        MsgTable[("chat_messages<br/>(FTS fts_vector + tenant_id)")]
+        OutboxTable[("outbox_events<br/>(Transactional Events)")]
     end
 
     Antigravity --> Hooks
@@ -113,20 +136,30 @@ flowchart TD
     Hooks -->|HTTP POST JSONL| ApiKeyFilter
     ExternalAgent -->|MCP Streamable HTTP / stdio| ApiKeyFilter
 
-    ApiKeyFilter --> SecConfig
+    ApiKeyFilter --> RateLimiter
+    RateLimiter --> SecConfig
     SecConfig --> GatewayMCP
 
-    REST_Ingest --> Extractor
+    REST_Ingest --> SecretRedact
+    SecretRedact --> Extractor
+    SecretRedact --> OutboxRepo
+    REST_Ingest --> VaultMetrics
     Extractor --> MemRepo
     Extractor --> MemVerRepo
 
+    REST_Memory --> PromptGuard
     REST_Memory --> Optimizer
     MCP_Server --> Optimizer
     REST_Gateway --> Optimizer
 
     Optimizer --> CacheMgr
-    Optimizer --> SearchEngine
+    Optimizer --> VectorAdapter
+    VectorAdapter --> SearchEngine
     Optimizer --> Tokenizer
+    Optimizer --> VaultMetrics
+
+    OutboxWorker --> OutboxRepo
+    OutboxWorker --> EventPub
 
     GatewayMCP --> MemoryHierarchy
     MemoryHierarchy --> JPA
@@ -471,9 +504,11 @@ erDiagram
     chat_sessions ||--o{ memories : "produces (1:N)"
     memories ||--o{ memory_versions : "tracks changes (1:N)"
     chat_sessions ||--o{ token_usage_metrics : "logs savings (1:N)"
+    chat_sessions ||--o{ outbox_events : "records events (1:N)"
 
     chat_sessions {
         UUID id PK
+        VARCHAR tenant_id "Default 'default' (Indexed)"
         VARCHAR external_session_id UK "Antigravity/Copilot ID"
         VARCHAR title
         TEXT description
@@ -489,6 +524,7 @@ erDiagram
 
     chat_messages {
         UUID id PK
+        VARCHAR tenant_id "Default 'default' (Indexed)"
         UUID session_id FK "References chat_sessions(id)"
         INT sequence_number "Unique per session"
         VARCHAR role "user/assistant/system"
@@ -525,6 +561,7 @@ erDiagram
 
     memories {
         UUID id PK
+        VARCHAR tenant_id "Default 'default' (Indexed)"
         VARCHAR project_id "Indexed, Scoped"
         UUID session_id FK "Nullable reference to source session"
         VARCHAR category "DECISION, PROJECT, PREFERENCE, PROCEDURAL, ACTION"
@@ -551,6 +588,7 @@ erDiagram
 
     token_usage_metrics {
         UUID id PK
+        VARCHAR tenant_id "Default 'default'"
         VARCHAR project_id "Indexed"
         UUID session_id FK
         VARCHAR model_name
@@ -564,12 +602,25 @@ erDiagram
 
     context_cache {
         UUID id PK
+        VARCHAR tenant_id "Default 'default'"
         VARCHAR query_hash UK "SHA-256 Hash"
         VARCHAR project_id "Indexed"
         TEXT cached_prompt
         INT token_count
         TIMESTAMPTZ expires_at "TTL Indexed"
         TIMESTAMPTZ created_at
+    }
+
+    outbox_events {
+        UUID id PK
+        VARCHAR aggregate_type "CHAT_SESSION / TRANSCRIPT"
+        VARCHAR aggregate_id "Session UUID string"
+        VARCHAR event_type "TRANSCRIPT_INGESTED"
+        JSONB payload "Serialized Event Data"
+        VARCHAR status "PENDING / PROCESSED / FAILED"
+        INT retry_count
+        TIMESTAMPTZ created_at "Indexed"
+        TIMESTAMPTZ processed_at
     }
 ```
 
@@ -584,6 +635,8 @@ erDiagram
 4. **Context Cache & Hash Lookups**:
    - `CREATE UNIQUE INDEX uq_context_cache_hash ON context_cache (query_hash);`
    - `CREATE INDEX idx_context_cache_ttl ON context_cache (expires_at);`
+5. **Transactional Outbox Index**:
+   - `CREATE INDEX idx_outbox_events_status_created ON outbox_events (status, created_at);`
 
 ---
 
@@ -595,8 +648,8 @@ flowchart LR
     
     subgraph Pipeline["Pre-Deployment Verification Gates (cd.yml)"]
         Gate1["Gate 1: Gitleaks<br/>Secret Scan"] --> Gate2a
-        Gate2a["Gate 2a: Test Suite<br/>63 Tests (0 Failures)"] --> Gate2b
-        Gate2b["Gate 2b: DB Migration<br/>Flyway V1-V4 on pg16"] --> Gate3
+        Gate2a["Gate 2a: Test Suite<br/>Unit + Integration Tests"] --> Gate2b
+        Gate2b["Gate 2b: DB Migration<br/>Flyway V1-V5 on pg16"] --> Gate3
         Gate3["Gate 3: Security Scan<br/>Aqua Trivy CVE Audit"] --> Gate4
         Gate4["Gate 4: Container Smoke<br/>Health + Auth + Token Optimizer"]
     end
@@ -605,8 +658,8 @@ flowchart LR
 ```
 
 1. **Gate 1 (Gitleaks)**: Scans diffs and commit history for exposed credentials, API keys, or private tokens.
-2. **Gate 2a (Unit & Integration Tests)**: Executes all 63 Spring Boot unit and integration tests using clean H2 in-memory profiles.
-3. **Gate 2b (PostgreSQL Migration Dry-Run)**: Boots an ephemeral `pgvector/pgvector:pg16` container and runs all Flyway migrations (`V1` through `V4`) to guarantee schema integrity.
+2. **Gate 2a (Unit & Integration Tests)**: Executes all Spring Boot unit and integration tests (including guardrails, security authentication, outbox resilience, and context optimization).
+3. **Gate 2b (PostgreSQL Migration Dry-Run)**: Boots an ephemeral `pgvector/pgvector:pg16` container and runs all Flyway migrations (`V1` through `V5`) to guarantee schema integrity and multi-tenancy backfill.
 4. **Gate 3 (Trivy Container CVE Scan)**: Packages the multi-stage Alpine Docker image and audits against the CVE vulnerability database.
 5. **Gate 4 (Live Smoke Test)**: Boots the actual application container, verifies `/actuator/health`, confirms security rejection (`401` on missing key), validates authorized access (`200` with `X-API-KEY`), and tests the Knapsack Token Budget Optimizer.
 6. **Production Delivery**: Publishes release containers to GitHub Container Registry (`ghcr.io/livejpsingh/ai-session-vault`) only upon 100% gate pass.
