@@ -47,4 +47,6 @@ public class ContextOptimizationRequest {
     private Set<MemoryCategory> categories;
 
     private Set<MemoryCategory> excludedCategories;
+
+    private String targetModel;
 }

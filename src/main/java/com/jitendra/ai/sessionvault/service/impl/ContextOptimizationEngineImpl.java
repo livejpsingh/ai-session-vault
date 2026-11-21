@@ -245,7 +245,8 @@ public class ContextOptimizationEngineImpl implements ContextOptimizationEngine 
 
         if (vaultMetricsService != null) {
             try {
-                vaultMetricsService.recordTokenOptimization(request.getTargetModel(), tokensSaved, latency);
+                String model = (request != null && request.getTargetModel() != null) ? request.getTargetModel() : "default";
+                vaultMetricsService.recordTokenOptimization(model, tokensSaved, latency);
             } catch (Exception e) {
                 log.warn("Failed to record optimization metric: {}", e.getMessage());
             }
