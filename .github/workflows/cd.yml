@@ -50,10 +50,15 @@ jobs:
         continue-on-error: true
 
       # =========================================================================
-      # GATE 2: Build & Database Migration Dry-Run (PostgreSQL + pgvector)
+      # GATE 2: Test Suite & Database Migration Dry-Run (PostgreSQL + pgvector)
       # =========================================================================
-      - name: Start PostgreSQL 16 with pgvector for Migration Dry-Run
+      - name: 'Gate 2a: Run Comprehensive Maven Test Suite'
         run: |
+          ./mvnw clean test --batch-mode
+
+      - name: 'Gate 2b: PostgreSQL 16 + pgvector Migration Dry-Run'
+        run: |
+          # 1. Start clean pgvector container
           docker run -d --name pg-dryrun \
             -e POSTGRES_DB=ai_session_vault \
             -e POSTGRES_USER=vault_user \
@@ -67,26 +72,19 @@ jobs:
             sleep 2
           done
 
-      - name: 'Gate 2: Execute Flyway V1-V4 Migration Dry-Run & Full Test Suite'
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/ai_session_vault
-          SPRING_DATASOURCE_USERNAME: vault_user
-          SPRING_DATASOURCE_PASSWORD: dryrun_vault_password_2026
-          VAULT_API_KEY: dryrun-verification-key-minimum-32-chars!
-        run: |
-          ./mvnw clean test --batch-mode
+          # 2. Execute Flyway migration scripts in sequential order
+          docker exec -i pg-dryrun psql -U vault_user -d ai_session_vault < src/main/resources/db/migration/V1__init_schema.sql
+          docker exec -i pg-dryrun psql -U vault_user -d ai_session_vault < src/main/resources/db/migration/V2__add_constraints_and_indexes.sql
+          docker exec -i pg-dryrun psql -U vault_user -d ai_session_vault < src/main/resources/db/migration/V3__add_rag_memory.sql
+          docker exec -i pg-dryrun psql -U vault_user -d ai_session_vault < src/main/resources/db/migration/V4__add_intelligent_memory_and_token_optimizer.sql
 
-      - name: Validate Database Schema Tables & Vector Extension
-        run: |
-          docker exec pg-dryrun psql -U vault_user -d ai_session_vault -c "\dt"
-          
-          # Assert required tables exist
-          for table in chat_sessions chat_messages memories memory_versions token_usage_metrics context_cache; do
+          # 3. Validate that all required tables and indexes were created
+          for table in chat_sessions chat_messages attachments session_tags tags rag_index_jobs session_chunks memories memory_versions token_usage_metrics context_cache; do
             docker exec pg-dryrun psql -U vault_user -d ai_session_vault -c "SELECT 1 FROM $table LIMIT 1;" > /dev/null 2>&1 || {
-              echo "Error: Required table '$table' is missing after migration!";
+              echo "Error: Required table '$table' is missing after migration dry-run!";
               exit 1;
             }
-            echo " [OK] Verified table: $table"
+            echo " [OK] Verified migrated table: $table"
           done
 
       - name: Clean up Dry-Run Database
