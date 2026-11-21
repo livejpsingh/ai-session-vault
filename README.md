@@ -1,6 +1,10 @@
 # AI Session Vault 2.0
 ### Intelligent Agent Memory, Hybrid RAG & Token Optimization Platform
 
+![Uploading image.png…]()
+
+
+
 [![CI Pipeline](https://github.com/livejpsingh/ai-session-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/livejpsingh/ai-session-vault/actions/workflows/ci.yml)
 [![CD Pipeline](https://github.com/livejpsingh/ai-session-vault/actions/workflows/cd.yml/badge.svg)](https://github.com/livejpsingh/ai-session-vault/actions/workflows/cd.yml)
 [![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange.svg)](https://openjdk.org/projects/jdk/21/)
