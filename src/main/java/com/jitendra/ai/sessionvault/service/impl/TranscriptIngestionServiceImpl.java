@@ -41,6 +41,10 @@ public class TranscriptIngestionServiceImpl implements TranscriptIngestionServic
     private final ObjectMapper objectMapper;
     private final RagIndexingTrigger ragIndexingTrigger;
     private final com.jitendra.ai.sessionvault.service.MemoryExtractionEngine memoryExtractionEngine;
+    private final com.jitendra.ai.sessionvault.observability.VaultMetricsService vaultMetricsService;
+    private final com.jitendra.ai.sessionvault.repository.OutboxEventRepository outboxEventRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.jitendra.ai.sessionvault.guardrails.SecretRedactionService secretRedactionService;
 
     @Override
     public TranscriptIngestResult ingestTranscript(TranscriptIngestRequest request) {
@@ -99,11 +103,16 @@ public class TranscriptIngestionServiceImpl implements TranscriptIngestionServic
                         assignedSeq = nextSeq++;
                     }
 
+                    String sanitizedContent = (secretRedactionService != null && parsed.content() != null)
+                            ? secretRedactionService.redactSecrets(parsed.content())
+                            : parsed.content();
+
                     ChatMessage msg = ChatMessage.builder()
                             .session(session)
+                            .tenantId(session.getTenantId() != null ? session.getTenantId() : "default")
                             .sequenceNumber(assignedSeq)
                             .role(parsed.role())
-                            .content(parsed.content())
+                            .content(sanitizedContent)
                             .thinking(parsed.thinking())
                             .toolCalls(parsed.toolCalls())
                             .toolCallId(parsed.toolCallId())
@@ -123,10 +132,42 @@ public class TranscriptIngestionServiceImpl implements TranscriptIngestionServic
         if (!toSave.isEmpty()) {
             messageRepository.saveAll(toSave);
             ragIndexingTrigger.requestIndex(session.getId());
+
+            // Outbox Pattern: Persist event within the same database transaction (Mitigates Risk R3)
+            if (outboxEventRepository != null) {
+                try {
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("sessionId", session.getId().toString());
+                    payload.put("messageCount", toSave.size());
+                    payload.put("externalSessionId", session.getExternalSessionId());
+                    payload.put("projectId", session.getProjectName());
+
+                    com.jitendra.ai.sessionvault.domain.OutboxEvent event = com.jitendra.ai.sessionvault.domain.OutboxEvent.builder()
+                            .tenantId(session.getTenantId() != null ? session.getTenantId() : "default")
+                            .aggregateType("SESSION")
+                            .aggregateId(session.getId().toString())
+                            .eventType("TRANSCRIPT_INGESTED")
+                            .payload(payload)
+                            .status("PENDING")
+                            .build();
+                    outboxEventRepository.save(event);
+                } catch (Exception e) {
+                    log.warn("Failed to persist outbox event for session {}: {}", session.getId(), e.getMessage());
+                }
+            }
+
             try {
                 memoryExtractionEngine.extractMemoriesFromSession(session.getId());
             } catch (Exception e) {
                 log.warn("Memory extraction warning for session {}: {}", session.getId(), e.getMessage());
+            }
+
+            if (vaultMetricsService != null) {
+                try {
+                    vaultMetricsService.recordTranscriptIngestion(session.getProvider(), toSave.size());
+                } catch (Exception e) {
+                    log.warn("Failed to record metrics: {}", e.getMessage());
+                }
             }
         }
 

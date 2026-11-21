@@ -13,4 +13,11 @@ public interface ContextOptimizationEngine {
      * @return budget-enforced optimized context response with usage statistics
      */
     OptimizedContextResponse optimizeContext(ContextOptimizationRequest request);
+
+    /**
+     * Invalidates all cached contexts for a specific project upon memory mutation (Mitigates Risk R8).
+     *
+     * @param projectId target project to invalidate
+     */
+    void invalidateCache(String projectId);
 }

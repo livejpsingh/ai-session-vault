@@ -47,6 +47,12 @@ class TranscriptIngestionServiceTest {
     @Mock
     private MemoryExtractionEngine memoryExtractionEngine;
 
+    @Mock
+    private com.jitendra.ai.sessionvault.repository.OutboxEventRepository outboxEventRepository;
+
+    @Mock
+    private com.jitendra.ai.sessionvault.observability.VaultMetricsService vaultMetricsService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 

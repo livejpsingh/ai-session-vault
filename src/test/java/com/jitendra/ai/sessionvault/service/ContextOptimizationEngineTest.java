@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
@@ -31,6 +33,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ContextOptimizationEngineTest {
 
     @Mock
@@ -60,7 +63,7 @@ class ContextOptimizationEngineTest {
                 objectMapper,
                 tokenCounter
         );
-        when(cacheRepository.findByCacheKeyAndExpiresAtAfter(anyString(), any())).thenReturn(Optional.empty());
+        lenient().when(cacheRepository.findByCacheKeyAndExpiresAtAfter(anyString(), any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -132,5 +135,12 @@ class ContextOptimizationEngineTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getTokenUsage().getUsed()).isLessThanOrEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("Invalidating cache for project calls deleteByProjectId (R8 Mitigation)")
+    void invalidateCache_CallsRepository() {
+        engine.invalidateCache("my-project");
+        verify(cacheRepository, times(1)).deleteByProjectId("my-project");
     }
 }

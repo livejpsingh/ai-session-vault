@@ -57,4 +57,6 @@ public interface MemoryRepository extends JpaRepository<Memory, UUID> {
             @Param("projectId") String projectId,
             @Param("query") String query,
             Pageable pageable);
+
+    void deleteByTenantIdAndProjectId(String tenantId, String projectId);
 }

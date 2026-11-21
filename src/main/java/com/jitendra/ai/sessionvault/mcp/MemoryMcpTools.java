@@ -149,6 +149,9 @@ public class MemoryMcpTools {
                 .build();
 
         Memory saved = extractionEngine.storeMemory(m);
+        if (projectId != null) {
+            optimizationEngine.invalidateCache(projectId);
+        }
         return Map.of("id", saved.getId().toString(), "status", "STORED", "category", saved.getCategory().name());
     }
 
@@ -163,6 +166,9 @@ public class MemoryMcpTools {
 
         UUID uuid = UUID.fromString(memoryId);
         Memory updated = extractionEngine.updateMemory(uuid, newContent, reason);
+        if (updated.getProjectId() != null) {
+            optimizationEngine.invalidateCache(updated.getProjectId());
+        }
         return Map.of("id", updated.getId().toString(), "status", "UPDATED", "updatedAt", updated.getUpdatedAt().toString());
     }
 
@@ -175,6 +181,7 @@ public class MemoryMcpTools {
 
         UUID uuid = UUID.fromString(memoryId);
         extractionEngine.forgetMemory(uuid);
+        optimizationEngine.invalidateCache(null);
         return Map.of("id", memoryId, "status", "FORGOTTEN");
     }
 

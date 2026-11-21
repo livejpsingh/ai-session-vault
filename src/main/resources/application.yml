@@ -85,6 +85,21 @@ springdoc:
 vault:
   security:
     api-key: ${VAULT_API_KEY:vault-secret-key-2026}
+    secondary-api-key: ${VAULT_SECONDARY_API_KEY:}
+  features:
+    testcontainers: true
+    docker-compose: true
+    security-hardening: false
+    observability: true
+    spring-ai-native: false
+    vector-store-adapter: false
+    resilience4j: false
+    streaming: false
+    multi-layer-cache: false
+    async-extraction: false
+    guardrails: false
+    multitenancy: false
+    kafka: false
   storage:
     attachments-dir: ${VAULT_ATTACHMENTS_DIR:./vault-storage/attachments}
   rag:
