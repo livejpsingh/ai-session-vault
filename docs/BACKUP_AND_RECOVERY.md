@@ -1,10 +1,10 @@
-# AI Session Vault - Backup & Disaster Recovery Guide
+# AI Session Vault 3.0 - Backup & Disaster Recovery Guide
 
 ## 1. Overview & Objectives
-AI Session Vault stores mission-critical developer sessions, tool execution logs, reasoning traces, and audit metadata. This document outlines the backup architecture, automated retention policies, Point-In-Time Recovery (PITR), and disaster recovery (DR) runbooks.
+AI Session Vault 3.0 stores mission-critical developer sessions, tool execution logs, reasoning traces, categorized memories, token metrics, outbox events, and audit metadata across Flyway migrations V1 through V5. This document outlines the backup architecture, automated retention policies, Point-In-Time Recovery (PITR), and disaster recovery (DR) runbooks.
 
 ### Targets
-- **Recovery Point Objective (RPO):** < 1 hour (daily full backup + continuous WAL archiving in production)
+- **Recovery Point Objective (RPO):** < 1 hour (daily full backup + continuous WAL archiving in production; transactional outbox eliminates turn drop risk)
 - **Recovery Time Objective (RTO):** < 15 minutes
 
 ---
