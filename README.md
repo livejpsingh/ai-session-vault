@@ -11,6 +11,7 @@ Use it to keep conversation history available across agent sessions and retrieve
 All architectural, operational, and disaster recovery documentation is organized under the [`docs/`](docs/) directory:
 
 - 📋 **[Phase-Wise Implementation Plan (Vault 2.0)](docs/PHASE_WISE_IMPLEMENTATION_PLAN.md)**: Gap analysis, token optimization engine, hierarchical memory, and Phased implementation roadmap.
+- ⚙️ **[CI/CD Pipeline & Pre-Deployment Verification Gates](docs/CI_CD_PIPELINE.md)**: GitHub Actions CI/CD workflows, Gitleaks, pgvector migration dry-run, Trivy security scan, container smoke test, and delivery to ghcr.io.
 - 🏛️ **[System Architecture Guide](docs/System-Architecture-Guide.md)**: RAG ingestion and retrieval flow, provider profiles, vector schema, and operational notes.
 - 🧭 **[Core Architecture Reference](docs/ARCHITECTURE.md)**: Existing subsystem design, MCP, search, ingestion, security, domain models, and database schema.
 - 🛡️ **[Production-Readiness Audit Report](docs/PRODUCTION_READINESS_REPORT.md)**: 15-dimension architecture and security audit, remediations, test suite execution metrics, and operational limitations.
