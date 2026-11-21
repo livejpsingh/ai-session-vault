@@ -14,14 +14,21 @@ spring:
   flyway:
     enabled: false
   ai:
+    model:
+      chat: none
+      embedding: none
     google:
       genai:
         api-key: test-dummy-genai-key
+    openai:
+      api-key: test-dummy-openai-key
     mcp:
       server:
         enabled: false
 
 vault:
+  rag:
+    enabled: false
   security:
     api-key: vault-secret-key-2026
   storage:

@@ -85,6 +85,19 @@ class SecurityAuthenticationTest {
     }
 
     @Test
+    @DisplayName("RAG endpoints require the existing API key")
+    void ragEndpointWithoutApiKey_Returns401() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/rag/search");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
     @DisplayName("Invalid API key returns 401 Unauthorized")
     void invalidApiKey_Returns401() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/sessions");

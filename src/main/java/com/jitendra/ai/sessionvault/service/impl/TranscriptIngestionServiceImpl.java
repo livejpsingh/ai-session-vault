@@ -13,6 +13,7 @@ import com.jitendra.ai.sessionvault.exception.InvalidTranscriptException;
 import com.jitendra.ai.sessionvault.repository.ChatMessageRepository;
 import com.jitendra.ai.sessionvault.repository.ChatSessionRepository;
 import com.jitendra.ai.sessionvault.repository.TagRepository;
+import com.jitendra.ai.sessionvault.rag.RagIndexingTrigger;
 import com.jitendra.ai.sessionvault.service.TranscriptIngestionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,8 @@ public class TranscriptIngestionServiceImpl implements TranscriptIngestionServic
     private final ChatMessageRepository messageRepository;
     private final TagRepository tagRepository;
     private final ObjectMapper objectMapper;
+    private final RagIndexingTrigger ragIndexingTrigger;
+    private final com.jitendra.ai.sessionvault.service.MemoryExtractionEngine memoryExtractionEngine;
 
     @Override
     public TranscriptIngestResult ingestTranscript(TranscriptIngestRequest request) {
@@ -119,6 +122,12 @@ public class TranscriptIngestionServiceImpl implements TranscriptIngestionServic
 
         if (!toSave.isEmpty()) {
             messageRepository.saveAll(toSave);
+            ragIndexingTrigger.requestIndex(session.getId());
+            try {
+                memoryExtractionEngine.extractMemoriesFromSession(session.getId());
+            } catch (Exception e) {
+                log.warn("Memory extraction warning for session {}: {}", session.getId(), e.getMessage());
+            }
         }
 
         int totalCount = messageRepository.countBySessionId(session.getId());
@@ -316,13 +325,20 @@ public class TranscriptIngestionServiceImpl implements TranscriptIngestionServic
         return new ParsedMessageData(
                 stepIndex,
                 role,
-                content.isBlank() ? "[Tool Invocation or Reasoning Trace]" : content,
-                thinking,
+                sanitizeNullBytes(content.isBlank() ? "[Tool Invocation or Reasoning Trace]" : content),
+                sanitizeNullBytes(thinking),
                 toolCalls,
                 toolCallId,
                 tokens,
                 createdAt
         );
+    }
+
+    private String sanitizeNullBytes(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.replace("\u0000", "").replace("\0", "");
     }
 
     private Set<Tag> resolveTags(Set<String> tagNames) {

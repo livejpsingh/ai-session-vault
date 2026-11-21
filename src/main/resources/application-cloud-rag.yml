@@ -1,0 +1,23 @@
+spring:
+  ai:
+    model:
+      chat: openai
+      embedding: openai
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      embedding:
+        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+        dimensions: ${VAULT_RAG_EMBEDDING_DIMENSION:768}
+      chat:
+        model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+    google:
+      genai:
+        api-key: cloud-profile-does-not-use-google
+
+vault:
+  rag:
+    provider: openai
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    query-prefix: ""
+    document-prefix: ""
+    tokenizer: cl100k_base

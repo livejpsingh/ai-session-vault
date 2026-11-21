@@ -15,7 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class VaultSecurityConfig {
 
-    @Value("${vault.security.api-key:vault-secret-key-2026}")
+    @Value("${vault.security.api-key}")
     private String apiKey;
 
     private final ObjectMapper objectMapper;
@@ -35,6 +35,9 @@ public class VaultSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                // MCP OAuth discovery endpoints — must be publicly reachable so MCP clients
+                // (Antigravity, GitHub Copilot) can discover the auth scheme before sending credentials
+                .requestMatchers("/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class);

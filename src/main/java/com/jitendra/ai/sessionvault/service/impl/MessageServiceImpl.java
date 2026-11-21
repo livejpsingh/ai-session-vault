@@ -7,6 +7,7 @@ import com.jitendra.ai.sessionvault.dto.SaveMessageRequest;
 import com.jitendra.ai.sessionvault.exception.ResourceNotFoundException;
 import com.jitendra.ai.sessionvault.repository.ChatMessageRepository;
 import com.jitendra.ai.sessionvault.repository.ChatSessionRepository;
+import com.jitendra.ai.sessionvault.rag.RagIndexingTrigger;
 import com.jitendra.ai.sessionvault.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class MessageServiceImpl implements MessageService {
 
     private final ChatSessionRepository sessionRepository;
     private final ChatMessageRepository messageRepository;
+    private final RagIndexingTrigger ragIndexingTrigger;
 
     @Override
     public ChatMessageDto addMessage(UUID sessionId, SaveMessageRequest request) {
@@ -47,6 +49,7 @@ public class MessageServiceImpl implements MessageService {
                 .build();
 
         ChatMessage saved = messageRepository.save(message);
+        ragIndexingTrigger.requestIndex(sessionId);
         return ChatMessageDto.fromEntity(saved);
     }
 
@@ -76,6 +79,9 @@ public class MessageServiceImpl implements MessageService {
         }
 
         List<ChatMessage> saved = messageRepository.saveAll(entities);
+        if (!saved.isEmpty()) {
+            ragIndexingTrigger.requestIndex(sessionId);
+        }
         return saved.stream().map(ChatMessageDto::fromEntity).toList();
     }
 

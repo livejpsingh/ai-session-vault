@@ -1,0 +1,535 @@
+{
+  "info": {
+    "_postman_id": "a931a243-7f84-4820-a61f-9c0bb12f8ea3",
+    "name": "AI Session Vault API",
+    "description": "Postman Collection for AI Session Vault — local MCP memory server and conversation persistence platform.\nDefault Base URL: http://localhost:8080\nAPI Key Header: X-API-KEY: vault-secret-key-2026",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "vault-secret-key-2026",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "75f5e9bd-2782-4d9b-a162-74a1c95e155f",
+      "type": "string"
+    },
+    {
+      "key": "externalSessionId",
+      "value": "test-session-001",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-KEY",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Actuator & Docs",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            }
+          }
+        },
+        {
+          "name": "OpenAPI v3 Docs JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v3/api-docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["v3", "api-docs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externalSessionId\": \"session-postman-01\",\n  \"title\": \"Postman Test Session\",\n  \"description\": \"Session created from Postman\",\n  \"provider\": \"google-antigravity\",\n  \"modelName\": \"gemini-2.5\",\n  \"projectName\": \"ai-session-vault\",\n  \"workspacePath\": \"c:/workspace/public/ai-session-vault\",\n  \"tags\": [\"test\", \"postman\"],\n  \"metadata\": {\n    \"env\": \"local\",\n    \"creator\": \"postman\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions?page=0&size=20&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                },
+                {
+                  "key": "projectName",
+                  "value": "ai-session-vault",
+                  "disabled": true
+                },
+                {
+                  "key": "provider",
+                  "value": "google-antigravity",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Session By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}?includeMessages=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}"],
+              "query": [
+                {
+                  "key": "includeMessages",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Session By External ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/external/{{externalSessionId}}?includeMessages=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "external", "{{externalSessionId}}"],
+              "query": [
+                {
+                  "key": "includeMessages",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Add Message to Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"USER\",\n  \"content\": \"How do I integrate the AI Session Vault with Postman?\",\n  \"sequenceNumber\": 1,\n  \"thinking\": \"User asking for Postman integration details\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Add Messages Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"role\": \"USER\",\n    \"content\": \"Explain how PostgreSQL tsvector indexing works.\",\n    \"sequenceNumber\": 2\n  },\n  {\n    \"role\": \"MODEL\",\n    \"content\": \"PostgreSQL full-text search uses tsvector to store lexemes and tsquery to perform fast matching using GIN indexes.\",\n    \"sequenceNumber\": 3,\n    \"tokensUsed\": 42\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/messages/batch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "messages", "batch"]
+            }
+          }
+        },
+        {
+          "name": "Get Session Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "messages"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search Messages (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/search?query=transcript&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "transcript"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "projectName",
+                  "value": "ai-session-vault",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Messages (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"PostgreSQL GIN index\",\n  \"projectName\": \"ai-session-vault\",\n  \"provider\": \"google-antigravity\",\n  \"page\": 0,\n  \"size\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "search"]
+            }
+          }
+        },
+        {
+          "name": "Search Within Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}/search?query=transcript",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "transcript"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transcript Ingestion",
+      "item": [
+        {
+          "name": "Ingest Transcript File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filePath\": \"C:/Users/admin/.gemini/antigravity/brain/61996e2e-4ae7-4547-9156-ff963286f793/.system_generated/logs/transcript.jsonl\",\n  \"externalSessionId\": \"antigravity-live-sync-01\",\n  \"projectName\": \"ai-session-vault\",\n  \"provider\": \"google-antigravity\",\n  \"workspacePath\": \"c:/workspace/public/ai-session-vault\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transcripts/ingest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transcripts", "ingest"]
+            }
+          }
+        },
+        {
+          "name": "Ingest Raw JSONL Content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonlContent\": \"{\\\"role\\\": \\\"USER\\\", \\\"content\\\": \\\"Hello Vault!\\\", \\\"step_index\\\": 1}\\n{\\\"role\\\": \\\"MODEL\\\", \\\"content\\\": \\\"Hello! Session Vault is ready.\\\", \\\"step_index\\\": 2}\",\n  \"externalSessionId\": \"custom-raw-session-01\",\n  \"title\": \"Custom Ingest Session\",\n  \"projectName\": \"ai-session-vault\",\n  \"provider\": \"google-antigravity\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transcripts/ingest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transcripts", "ingest"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "Export Session Markdown",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/sessions/{{sessionId}}?format=MARKDOWN",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "sessions", "{{sessionId}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "MARKDOWN"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Session JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/sessions/{{sessionId}}?format=JSON",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "sessions", "{{sessionId}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "JSON"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export by External Session ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/external/{{externalSessionId}}?format=MARKDOWN",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "external", "{{externalSessionId}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "MARKDOWN"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Intelligent Memory & Token Optimization",
+      "item": [
+        {
+          "name": "Optimize Context (Token Budget Engine)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"How is PostgreSQL and Spring Boot configured?\",\n  \"projectId\": \"ai-session-vault\",\n  \"tokenBudget\": 500,\n  \"optimizationMode\": \"BALANCED\",\n  \"includePreferences\": true,\n  \"includeDecisions\": true,\n  \"includeHistory\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/memory/optimize-context",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memory", "optimize-context"]
+            }
+          }
+        },
+        {
+          "name": "Store Memory Fact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"DECISION\",\n  \"content\": \"We decided to migrate our search engine to PostgreSQL 18 with pgvector for hybrid search.\",\n  \"importanceScore\": 0.95,\n  \"projectId\": \"ai-session-vault\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/memory/store",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memory", "store"]
+            }
+          }
+        },
+        {
+          "name": "Get Project Decisions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/memory/decisions?projectId=ai-session-vault",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memory", "decisions"],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "ai-session-vault"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Memory Stats & Token Savings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/memory/stats?projectId=ai-session-vault",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "memory", "stats"],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "ai-session-vault"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agent Context Gateway",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Explain deployment and Docker setup\",\n  \"agentId\": \"coding-assistant-01\",\n  \"projectId\": \"ai-session-vault\",\n  \"tokenBudget\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agents/context",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "agents", "context"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
