@@ -71,7 +71,7 @@ Start the application or execute Flyway validate to ensure schema consistency:
 Verify application health and query counts:
 ```bash
 curl -f http://localhost:8080/actuator/health
-curl -H "X-API-KEY: vault-secret-key-2026" http://localhost:8080/api/sessions
+curl -H "X-API-KEY: ${VAULT_API_KEY:?Set VAULT_API_KEY}" http://localhost:8080/api/sessions
 ```
 
 ---

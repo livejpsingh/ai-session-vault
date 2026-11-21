@@ -1,0 +1,19 @@
+﻿{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "powershell": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/session-vault-hook.ps1 -Platform copilot -Event SessionStart",
+        "timeoutSec": 15
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "powershell": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/session-vault-hook.ps1 -Platform copilot -Event Stop",
+        "timeoutSec": 45
+      }
+    ]
+  }
+}

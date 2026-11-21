@@ -1,18 +1,18 @@
-{
+﻿{
   "vault-session-sync": {
-    "description": "Auto-sync Antigravity conversation transcripts to AI Session Vault (local MCP memory server). SessionStart loads existing history; Stop saves each turn.",
+    "description": "Auto-sync Antigravity conversation transcripts to AI Session Vault. SessionStart registers/backfills the session; Stop syncs the transcript.",
     "SessionStart": [
       {
         "type": "command",
-        "command": "pwsh -NoProfile -NonInteractive -File .agents/hooks/session-start.ps1",
+        "command": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/session-vault-hook.ps1 -Platform antigravity -Event SessionStart",
         "timeout": 15
       }
     ],
     "Stop": [
       {
         "type": "command",
-        "command": "pwsh -NoProfile -NonInteractive -File .agents/hooks/session-stop.ps1",
-        "timeout": 15
+        "command": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/session-vault-hook.ps1 -Platform antigravity -Event Stop",
+        "timeout": 45
       }
     ]
   }

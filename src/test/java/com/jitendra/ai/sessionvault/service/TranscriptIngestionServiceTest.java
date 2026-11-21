@@ -10,6 +10,7 @@ import com.jitendra.ai.sessionvault.exception.InvalidTranscriptException;
 import com.jitendra.ai.sessionvault.repository.ChatMessageRepository;
 import com.jitendra.ai.sessionvault.repository.ChatSessionRepository;
 import com.jitendra.ai.sessionvault.repository.TagRepository;
+import com.jitendra.ai.sessionvault.rag.RagIndexingTrigger;
 import com.jitendra.ai.sessionvault.service.impl.TranscriptIngestionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,12 @@ class TranscriptIngestionServiceTest {
 
     @Mock
     private TagRepository tagRepository;
+
+    @Mock
+    private RagIndexingTrigger ragIndexingTrigger;
+
+    @Mock
+    private MemoryExtractionEngine memoryExtractionEngine;
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -87,6 +94,7 @@ class TranscriptIngestionServiceTest {
         assertThat(result.getMessagesIngested()).isEqualTo(2);
         assertThat(result.getDuplicatesSkipped()).isEqualTo(0);
         verify(messageRepository).saveAll(any());
+        verify(ragIndexingTrigger).requestIndex(sessionId);
     }
 
     @Test
@@ -134,6 +142,7 @@ class TranscriptIngestionServiceTest {
 
         // Verify saveAll was NOT called since all messages were duplicates
         verify(messageRepository, never()).saveAll(any());
+        verifyNoInteractions(ragIndexingTrigger);
     }
 
     @Test

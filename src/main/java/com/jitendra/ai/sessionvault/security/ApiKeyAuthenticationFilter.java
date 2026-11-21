@@ -65,7 +65,9 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/actuator/info") ||
                path.equals("/error") ||
                path.startsWith("/swagger-ui") ||
-               path.startsWith("/v3/api-docs");
+               path.startsWith("/v3/api-docs") ||
+               // MCP OAuth discovery — must be reachable before the client sends credentials
+               path.startsWith("/.well-known/oauth-protected-resource");
     }
 
     private String extractApiKey(HttpServletRequest request) {

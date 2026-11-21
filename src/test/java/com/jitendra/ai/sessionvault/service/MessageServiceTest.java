@@ -8,6 +8,7 @@ import com.jitendra.ai.sessionvault.dto.SaveMessageRequest;
 import com.jitendra.ai.sessionvault.exception.ResourceNotFoundException;
 import com.jitendra.ai.sessionvault.repository.ChatMessageRepository;
 import com.jitendra.ai.sessionvault.repository.ChatSessionRepository;
+import com.jitendra.ai.sessionvault.rag.RagIndexingTrigger;
 import com.jitendra.ai.sessionvault.service.impl.MessageServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,6 +36,9 @@ class MessageServiceTest {
 
     @Mock
     private ChatMessageRepository messageRepository;
+
+    @Mock
+    private RagIndexingTrigger ragIndexingTrigger;
 
     @InjectMocks
     private MessageServiceImpl messageService;
@@ -71,6 +75,7 @@ class MessageServiceTest {
         assertThat(result.getContent()).isEqualTo("Hello assistant");
         assertThat(result.getRole()).isEqualTo(MessageRole.USER);
         assertThat(result.getSequenceNumber()).isEqualTo(1);
+        verify(ragIndexingTrigger).requestIndex(sessionId);
     }
 
     @Test
@@ -105,6 +110,7 @@ class MessageServiceTest {
         assertThat(dtos.get(0).getSequenceNumber()).isEqualTo(6);
         assertThat(dtos.get(1).getSequenceNumber()).isEqualTo(7);
         assertThat(dtos.get(1).getThinking()).isEqualTo("Reasoning 1");
+        verify(ragIndexingTrigger).requestIndex(sessionId);
     }
 
     @Test
