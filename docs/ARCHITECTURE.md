@@ -3,7 +3,7 @@
 
 **Document Version:** 3.0.0  
 **Status:** Approved & Production-Ready  
-**Target Runtimes:** Java 21 LTS / Spring Boot 4.1.2 / Spring AI 2.0.1  
+**Target Runtimes:** Java 25 LTS / Spring Boot 4.2.0 / Spring AI 2.0.3  
 **Persistence Tier:** PostgreSQL 16/18 with `pgvector` & GIN Full-Text Search (Flyway V1–V5)  
 **Protocol Integrations:** Model Context Protocol (MCP 19 Tools), REST API, VS Code Lifecycle Hooks, Transactional Outbox  
 
@@ -666,10 +666,88 @@ flowchart LR
 
 ---
 
-## 7. Related Architectural Documents
+## 7. Code & Database Schema Deep-Dive
 
-- 📋 [Phase-Wise Implementation Plan](file:///c:/workspace/public/ai-session-vault/docs/PHASE_WISE_IMPLEMENTATION_PLAN.md)
-- ⚙️ [CI/CD Pipeline & Pre-Deployment Verification Gates](file:///c:/workspace/public/ai-session-vault/docs/CI_CD_PIPELINE.md)
-- 🏛️ [System Architecture Guide](file:///c:/workspace/public/ai-session-vault/docs/System-Architecture-Guide.md)
-- 🛡️ [Production-Readiness Audit Report](file:///c:/workspace/public/ai-session-vault/docs/PRODUCTION_READINESS_REPORT.md)
-- 💾 [Backup & Disaster Recovery Guide](file:///c:/workspace/public/ai-session-vault/docs/BACKUP_AND_RECOVERY.md)
+### 7.1 Core PostgreSQL Schema Snippets (`V4` & `V5`)
+
+The persistence layer combines `pgvector` HNSW cosine similarity, PostgreSQL generated `TSVECTOR` GIN full-text indexes, and a transactional outbox (`outbox_events`) for durable async indexing:
+
+```sql
+-- Structured 4-tier memory store with conditional pgvector HNSW + GIN FTS (Flyway V4)
+CREATE TABLE IF NOT EXISTS memories (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id           VARCHAR(100) NOT NULL DEFAULT 'default',
+    project_id          VARCHAR(100),
+    session_id          UUID REFERENCES chat_sessions(id) ON DELETE SET NULL,
+    category            VARCHAR(50) NOT NULL,
+    content             TEXT NOT NULL,
+    short_summary       VARCHAR(500),
+    importance_score    DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    confidence_score    DOUBLE PRECISION NOT NULL DEFAULT 1.0,
+    embedding           vector(1536),
+    is_active           BOOLEAN NOT NULL DEFAULT true,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    search_vector       TSVECTOR GENERATED ALWAYS AS (to_tsvector('english', coalesce(content, ''))) STORED
+);
+
+CREATE INDEX IF NOT EXISTS idx_memories_embedding
+    ON memories USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
+CREATE INDEX IF NOT EXISTS idx_memories_search_vector ON memories USING GIN (search_vector);
+
+-- Transactional Outbox for zero-message-loss async extraction (Flyway V5)
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id       VARCHAR(100) NOT NULL DEFAULT 'default',
+    aggregate_type  VARCHAR(100) NOT NULL,
+    aggregate_id    VARCHAR(100) NOT NULL,
+    event_type      VARCHAR(100) NOT NULL,
+    payload         JSONB NOT NULL,
+    status          VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    retry_count     INT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 7.2 Knapsack Token Budget Packing (`ContextOptimizationEngineImpl`)
+
+Every `optimize-context` request hashes `(tenantId, projectId, query, budget, mode)` with SHA-256 for sub-30ms cache hits. On a cache miss, candidates are compressed according to `OptimizationMode`, deduplicated, ranked by importance/relevance, and packed greedily with a `shortSummary` fallback so `tokensUsed <= budget` is guaranteed:
+
+```java
+for (OptimizedCandidate candidate : processedCandidates) {
+    if (tokensUsed + candidate.tokenCost <= budget) {
+        tokensUsed += candidate.tokenCost;
+        selectedItems.add(buildItem(candidate));
+    } else if (candidate.memory != null && candidate.memory.getShortSummary() != null) {
+        String summary = candidate.memory.getShortSummary();
+        int summaryTokens = countTokens(summary);
+        if (tokensUsed + summaryTokens <= budget) {
+            tokensUsed += summaryTokens;
+            selectedItems.add(buildSummaryItem(candidate, summary, summaryTokens));
+        }
+    }
+}
+```
+
+### 7.3 $0-Cost Deterministic Memory Extraction (`MemoryExtractionEngineImpl`)
+
+Incoming transcripts are scanned locally with compiled regex patterns and tech-stack matchers — requiring zero external LLM calls:
+
+```java
+private static final Pattern DECISION_PATTERN = Pattern.compile(
+    "(?i)(?:we decided to|decided to|agreed on|agreed that|selected|switched to|will use|chose)\\s+([^.\\n]{10,150})");
+private static final Pattern PREFERENCE_PATTERN = Pattern.compile(
+    "(?i)(?:prefer|preference for|always use|never use|convention is to)\\s+([^.\\n]{10,120})");
+private static final Pattern ACTION_PATTERN = Pattern.compile(
+    "(?i)(?:TODO|FIXME|NEED TO|ACTION ITEM)[:\\s]+([^.\\n]{10,150})");
+```
+
+---
+
+## 8. Related Architectural Documents
+
+- 📋 [Phase-Wise Implementation Plan](PHASE_WISE_IMPLEMENTATION_PLAN.md)
+- ⚙️ [CI/CD Pipeline & Pre-Deployment Verification Gates](CI_CD_PIPELINE.md)
+- 🏛️ [System Architecture Guide](System-Architecture-Guide.md)
+- 🛡️ [Production-Readiness Audit Report](PRODUCTION_READINESS_REPORT.md)
+- 💾 [Backup & Disaster Recovery Guide](BACKUP_AND_RECOVERY.md)
+- 🔄 [PostgreSQL High Availability (HA) Patterns](POSTGRESQL_HA.md)

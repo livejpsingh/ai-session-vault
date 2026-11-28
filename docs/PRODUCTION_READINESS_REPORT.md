@@ -2,7 +2,7 @@
 
 **Author:** Independent Senior Java Architect & Lead Security Reviewer  
 **Audit Date:** November 21, 2026  
-**Target System:** `AI Session Vault 3.0` (Spring Boot 4.1.2 / Java 21 LTS / Spring AI 2.0.1 / PostgreSQL 16/18 with pgvector)  
+**Target System:** `AI Session Vault 3.0` (Spring Boot 4.2.0 / Java 25 LTS / Spring AI 2.0.3 / PostgreSQL 16/18 with pgvector)  
 **Final Verdict:** **PRODUCTION-READY** (All 30 engineering maturity gaps closed; R1–R8 risk mitigations active)
 
 ---
@@ -23,8 +23,8 @@ Through the v3.0 upgrade:
 
 | # | Dimension | Status | Assessment Summary |
 |---|---|---|---|
-| 1 | **Java & Spring Boot Compatibility** | **PASSED** | Built with JDK 25 LTS and Spring Boot 4.1.2. Virtual threads enabled (`spring.threads.virtual.enabled: true`). Compiles with zero compilation errors with `-release 21` target bytecode. |
-| 2 | **Spring AI MCP Protocol Compatibility** | **PASSED** | Implemented `SessionVaultMcpTools` with `@McpTool` and `@McpToolParam` annotations conforming to the Model Context Protocol (v2.0.1). Registered over HTTP SSE at `/mcp/message`. |
+| 1 | **Java & Spring Boot Compatibility** | **PASSED** | Built with JDK 25 LTS and Spring Boot 4.2.0. Virtual threads enabled (`spring.threads.virtual.enabled: true`). Compiles with zero compilation errors with `-release 25` target bytecode. |
+| 2 | **Spring AI MCP Protocol Compatibility** | **PASSED** | Implemented `SessionVaultMcpTools` with Spring AI 2.0.3 and `@McpTool` / `@McpToolParam` annotations. Registered over Streamable HTTP at `/mcp`. |
 | 3 | **PostgreSQL Schema & Indexing** | **PASSED** | Flyway migrations `V1__init_schema.sql` and `V2__add_constraints_and_indexes.sql` enforce primary keys, foreign keys, unique constraint `(session_id, sequence_number)`, GIN index on `to_tsvector('english', content)`, and composite indexes. |
 | 4 | **Transaction Boundaries** | **PASSED** | All service implementations leverage declarative `@Transactional(readOnly = true)` at class level and `@Transactional` on mutation methods. Rollbacks properly cascade on unhandled exceptions. |
 | 5 | **REST API Correctness** | **PASSED** | Authored REST controllers for Sessions, Messages, Search, Export, and Ingestion conforming to RESTful semantics, appropriate HTTP status codes (200, 201, 204, 400, 401, 404), and JSON response models. |

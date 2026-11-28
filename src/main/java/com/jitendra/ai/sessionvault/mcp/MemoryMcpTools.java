@@ -87,7 +87,8 @@ public class MemoryMcpTools {
             name = "memory_search",
             description = "Search across structured long-term memories and facts using PostgreSQL full-text search with importance ranking."
     )
-    public List<Map<String, Object>> search(
+    public List<Map<String, Object>>
+    search(
             @McpToolParam(description = "Search query or keywords", required = true) String query,
             @McpToolParam(description = "Optional project identifier filter", required = false) String projectId,
             @McpToolParam(description = "Max results to return (default: 10)", required = false) Integer limit) {

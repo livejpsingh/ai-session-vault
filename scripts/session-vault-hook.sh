@@ -36,7 +36,7 @@ if [ -z "$TRANSCRIPT_PATH" ]; then
 fi
 
 VAULT_URL="${VAULT_BASE_URL:-http://localhost:8080}"
-VAULT_KEY="${VAULT_API_KEY:-vault-secret-key-2026}"
+VAULT_KEY="${VAULT_API_KEY:?Set VAULT_API_KEY environment variable}"
 
 if [ -n "$SESSION_ID" ] && [ "$EVENT" = "SessionStart" ]; then
   PROVIDER="google-antigravity"

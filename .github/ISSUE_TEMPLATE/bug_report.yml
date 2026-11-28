@@ -1,0 +1,62 @@
+name: Bug Report
+description: Report a defect, regression, or unexpected behavior in AI Session Vault
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please check [GitHub Discussions](https://github.com/livejpsingh/ai-session-vault/discussions) first if you are unsure whether this is a configuration question or a defect.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands, API calls, or MCP tool invocations to reproduce the issue.
+      placeholder: |
+        1. Start service with `docker compose up -d`
+        2. Call `POST /api/memory/optimize-context` with ...
+        3. Observe error ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      options:
+        - Token Budget Optimizer
+        - Memory Extraction Engine
+        - Hybrid RAG / pgvector Search
+        - MCP Server / Bridge
+        - Editor Lifecycle Hooks (Antigravity / Copilot)
+        - Flyway Migrations / PostgreSQL
+        - Security / Guardrails
+        - Docker / CI/CD
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Java version, PostgreSQL/pgvector version, and Spring profile (e.g. Windows 11, Java 25, pg16, local-rag).
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or stack trace
+      description: Paste any relevant application logs (ensure all API keys/secrets are redacted).
+      render: shell

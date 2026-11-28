@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions (Q&A, Architecture & Ideas)
+    url: https://github.com/livejpsingh/ai-session-vault/discussions
+    about: Ask questions, share token optimization benchmarks, or discuss new MCP tools with the community.
+  - name: Security Vulnerability Disclosure
+    url: https://github.com/livejpsingh/ai-session-vault/security/advisories/new
+    about: Privately report security vulnerabilities without opening a public issue.
