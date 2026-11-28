@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a931a243-7f84-4820-a61f-9c0bb12f8ea3",
     "name": "AI Session Vault API",
-    "description": "Postman Collection for AI Session Vault — local MCP memory server and conversation persistence platform.\nDefault Base URL: http://localhost:8080\nAPI Key Header: X-API-KEY: vault-secret-key-2026",
+    "description": "Postman Collection for AI Session Vault — local MCP memory server and conversation persistence platform.\nDefault Base URL: http://localhost:8080\nAPI Key Header: X-API-KEY: {{apiKey}} (set apiKey to your VAULT_API_KEY environment variable)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -13,7 +13,7 @@
     },
     {
       "key": "apiKey",
-      "value": "vault-secret-key-2026",
+      "value": "{{VAULT_API_KEY}}",
       "type": "string"
     },
     {

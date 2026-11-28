@@ -26,7 +26,15 @@ if (-not $conversationId -or -not $transcriptPath -or -not (Test-Path $transcrip
     exit 0
 }
 
-$apiKey = if ($env:VAULT_API_KEY -and $env:VAULT_API_KEY -ne "") { $env:VAULT_API_KEY } else { "vault-secret-key-2026" }
+$apiKey = $env:VAULT_API_KEY
+if (-not $apiKey -or $apiKey -eq "") {
+    $envFile = Join-Path (Resolve-Path "$PSScriptRoot\..\..") ".env"
+    if (Test-Path $envFile) {
+        $line = Get-Content $envFile | Where-Object { $_ -match '^\s*VAULT_API_KEY\s*=' } | Select-Object -First 1
+        if ($line) { $apiKey = ($line -split '=', 2)[1].Trim().Trim('"').Trim("'") }
+    }
+}
+if (-not $apiKey -or $apiKey -eq "") { Write-Output '{}'; exit 0 }
 $vaultBase = "http://localhost:8080"
 
 try {

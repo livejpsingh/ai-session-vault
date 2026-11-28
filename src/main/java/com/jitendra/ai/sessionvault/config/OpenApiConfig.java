@@ -33,12 +33,12 @@ public class OpenApiConfig {
                                 
                                 ### Authentication
                                 All endpoints (except `/actuator/health`) require the `X-API-KEY` header.
-                                Default key: `vault-secret-key-2026`
+                                Configured via the `VAULT_API_KEY` environment variable.
                                 """)
                         .contact(new Contact()
                                 .name("Jitendra")
                                 .url("https://github.com/jitendra"))
-                        .license(new License().name("MIT")))
+                        .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0")))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Local development")))
                 .addSecurityItem(new SecurityRequirement().addList(API_KEY_SCHEME))
@@ -48,6 +48,6 @@ public class OpenApiConfig {
                                         .name("X-API-KEY")
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
-                                        .description("API key — default: `vault-secret-key-2026`")));
+                                        .description("API key configured via the `VAULT_API_KEY` environment variable")));
     }
 }

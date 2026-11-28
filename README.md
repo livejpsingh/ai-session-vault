@@ -1,5 +1,5 @@
-# AI Session Vault 2.0
-### Intelligent Agent Memory, Hybrid RAG & Token Optimization Platform
+# AI Session Vault
+### Always-On Background AI Chat Session Persistence & Memory Platform (PostgreSQL + pgvector)
 
 ![Uploading image.png…]()
 
@@ -7,10 +7,12 @@
 
 [![CI Pipeline](https://github.com/livejpsingh/ai-session-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/livejpsingh/ai-session-vault/actions/workflows/ci.yml)
 [![CD Pipeline](https://github.com/livejpsingh/ai-session-vault/actions/workflows/cd.yml/badge.svg)](https://github.com/livejpsingh/ai-session-vault/actions/workflows/cd.yml)
-[![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange.svg)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Coverage](https://img.shields.io/badge/Coverage-JaCoCo%20Verified-brightgreen.svg)](.github/workflows/ci.yml)
+[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](https://openjdk.org/projects/jdk/25/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.2.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2F18%20%2B%20pgvector-blue.svg)](https://github.com/pgvector/pgvector)
 [![MCP Server](https://img.shields.io/badge/MCP-19%20Tools%20Active-purple.svg)](https://modelcontextprotocol.io/)
+[![Discussions](https://img.shields.io/badge/GitHub-Discussions-blue.svg)](https://github.com/livejpsingh/ai-session-vault/discussions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ---
@@ -19,16 +21,16 @@
 
 ---
 
-## 🌟 Executive Summary
+## 🌟 Core Objective & Executive Summary
 
-**AI Session Vault 2.0** is an open-source, self-hosted conversation persistence, hierarchical memory, and token-budget optimization platform for AI coding agents. 
+**AI Session Vault** is an always-on, self-hosted background service that **automatically captures and persists every AI coding chat session into PostgreSQL + `pgvector`** — across **any repository** and **any IDE** (**VS Code**, **IntelliJ IDEA**, **Android Studio**, etc.).
 
-When developers interact with AI coding assistants (**Google Antigravity**, **GitHub Copilot**, Claude Code, Cursor) in VS Code, conversational transcripts quickly bloat to 30,000–100,000+ tokens per session. Continuously resending massive historical transcripts to LLM providers:
-1. **Drives up organizational API costs** exponentially.
-2. **Degrades agent response latency** due to processing bloated context windows.
-3. **Dilutes LLM focus**, leading to hallucination or forgetting critical architectural decisions and technical constraints.
+Whenever you start your machine or open any project and interact with AI assistants — **Google Antigravity**, **GitHub Copilot**, **Claude**, **Codex**, or **Cursor** — your entire conversation history (`chat_sessions`, `chat_messages`, tool calls, and reasoning traces) is automatically recorded and stored durably in PostgreSQL so no engineering context is ever lost.
 
-**AI Session Vault 2.0** acts as an intelligent intermediary memory layer that automatically captures conversations via lightweight editor hooks, extracts reusable memories with **$0 LLM cost**, and dynamically compresses context into exact requested token budgets (**70% to 90% token reduction**).
+Built on top of this core persistent session archive, **AI Session Vault** also provides:
+1. **Universal Cross-IDE & Cross-Agent Search (`pgvector` + Full-Text Search):** Query past solutions, decisions, and code discussions across all repositories and IDEs.
+2. **19 Spring AI MCP Tools:** Expose saved sessions (`vault_list_sessions`, `vault_get_session`, `vault_search_messages`, `vault_ingest_transcript`, `vault_save_message`, `vault_export_session`) and structured memory (`memory_*`) directly to any MCP-compatible agent.
+3. **$0-Cost Memory Extraction & Knapsack Token Budget Optimization:** Automatically extract reusable decisions/preferences without extra LLM calls and pack context into exact token budgets (**70% to 90% token reduction**) when agents recall history.
 
 ---
 
@@ -103,7 +105,7 @@ bash scripts/install-hooks.sh
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
-- **Java 21 LTS** or **Docker Desktop**
+- **Java 25 LTS** or **Docker Desktop**
 - **PostgreSQL 16+** (with `pgvector` extension)
 
 ### 2. Configure Environment
@@ -135,10 +137,14 @@ docker compose up -d
 
 ## 💡 Quick API & cURL Examples
 
+> **Security Note:** Set `VAULT_API_KEY` in your `.env` or shell environment before running any API commands (never hardcode keys in scripts or configs).
+
 ### Optimize Context for 500 Token Budget
 ```bash
+export VAULT_API_KEY="your-api-key-from-env"
+
 curl -X POST http://localhost:8080/api/memory/optimize-context \
-  -H "X-API-KEY: vault-secret-key-2026" \
+  -H "X-API-KEY: ${VAULT_API_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "How do we run unit tests and database migrations?",
@@ -152,7 +158,7 @@ curl -X POST http://localhost:8080/api/memory/optimize-context \
 **Response:**
 ```json
 {
-  "optimizedPrompt": "### PROJECT CONTEXT & CONSTRAINTS\n- Tech Stack: Java 21, Spring Boot 4.1.2, PostgreSQL 18 with pgvector\n- Verified Runbook: .\\mvnw test (executes 63 unit tests)\n- Verified Runbook: docker compose up -d (starts PostgreSQL + pgvector)\n- Architectural Decision: Flyway V1-V4 manages relational migrations with conditional pgvector HNSW indexes",
+  "optimizedPrompt": "### PROJECT CONTEXT & CONSTRAINTS\n- Tech Stack: Java 25, Spring Boot 4.2.0, PostgreSQL 18 with pgvector\n- Verified Runbook: .\\mvnw test (executes unit & benchmark tests)\n- Verified Runbook: docker compose up -d (starts PostgreSQL + pgvector)\n- Architectural Decision: Flyway V1-V5 manages relational migrations with conditional pgvector HNSW indexes",
   "actualTokens": 88,
   "budgetLimit": 500,
   "reductionPercentage": 82.4,
@@ -165,7 +171,7 @@ curl -X POST http://localhost:8080/api/memory/optimize-context \
 
 ## 🤖 Configuring MCP Clients
 
-Add AI Session Vault 2.0 to your agent's MCP configuration:
+Add AI Session Vault 2.0 to your agent's MCP configuration using your `VAULT_API_KEY` environment variable:
 
 ### Claude Desktop (`claude_desktop_config.json`) / VS Code Antigravity:
 ```json
@@ -178,7 +184,7 @@ Add AI Session Vault 2.0 to your agent's MCP configuration:
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        "node C:/workspace/public/ai-session-vault/scripts/mcp-bridge.js http://localhost:8080/mcp vault-secret-key-2026"
+        "node C:/workspace/public/ai-session-vault/scripts/mcp-bridge.js http://localhost:8080/mcp $env:VAULT_API_KEY"
       ]
     }
   }
@@ -189,7 +195,7 @@ Add AI Session Vault 2.0 to your agent's MCP configuration:
 
 ## 📊 REST API Quick Reference
 
-All endpoints (except health and MCP discovery) require the `X-API-KEY` header (`vault-secret-key-2026` by default):
+All endpoints (except health and MCP discovery) require the `X-API-KEY` header matching your `VAULT_API_KEY` environment variable:
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -217,11 +223,57 @@ The project includes an enterprise GitHub Actions CI/CD pipeline enforcing **4 m
 
 ---
 
+---
+
+## 📈 Benchmarks & Verified Metrics
+
+All performance and token-reduction claims are backed by reproducible automated benchmarks in [PerformanceAndReductionBenchmarkTest.java](src/test/java/com/jitendra/ai/sessionvault/benchmark/PerformanceAndReductionBenchmarkTest.java):
+
+| Claimed Metric | Verification Benchmark | Run Command |
+| :--- | :--- | :--- |
+| **70%–90% Token Reduction** | Compresses 40-turn session corpus under `BALANCED` (500-token budget) & `AGGRESSIVE` (300-token budget) modes | `./mvnw test -Dtest=PerformanceAndReductionBenchmarkTest` |
+| **Zero Silent Overruns** | Asserts `tokensUsed <= tokenBudget` across budgets `50, 100, 250, 500, 1000, 2000` and all 3 optimization modes | `./mvnw test -Dtest=PerformanceAndReductionBenchmarkTest` |
+| **Sub-30ms Cache Hits** | Measures average and max latency over 50 repeated SHA-256 context cache hits (`< 30 ms`) | `./mvnw test -Dtest=PerformanceAndReductionBenchmarkTest` |
+| **$0-Cost Extraction** | Verifies local regex/AST extraction of `PROJECT`, `DECISION`, `PREFERENCE`, `PROCEDURAL`, `ACTION` with zero LLM calls | `./mvnw test -Dtest=PerformanceAndReductionBenchmarkTest` |
+
+---
+
+## 🧩 Architecture & Schema Deep-Dive
+
+For full HLD/LLD diagrams, transactional outbox sequence flows, and Java code snippets, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). At a glance, the core persistence layer uses `pgvector` HNSW cosine similarity + PostgreSQL generated `TSVECTOR` GIN full-text search:
+
+```sql
+CREATE TABLE IF NOT EXISTS memories (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id        VARCHAR(100) NOT NULL DEFAULT 'default',
+    category         VARCHAR(50) NOT NULL,
+    content          TEXT NOT NULL,
+    short_summary    VARCHAR(500),
+    importance_score DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    embedding        vector(1536),
+    search_vector    TSVECTOR GENERATED ALWAYS AS (to_tsvector('english', coalesce(content, ''))) STORED
+);
+```
+
+---
+
+## 🤝 Community, Contributing & License
+
+- **Discussions:** Ask questions, share benchmarks, or propose architecture ideas in [GitHub Discussions](https://github.com/livejpsingh/ai-session-vault/discussions). *(Maintainers: ensure Discussions is enabled in **Settings → Features → Discussions**.)*
+- **Issues:** Use our structured [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) and [Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml) templates.
+- **Contributing:** Read [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, Flyway migration rules, and PR standards.
+- **License:** Licensed under the [Apache License 2.0](LICENSE).
+
+---
+
 ## 📚 Documentation Index
 
+- ✅ **[Core Functionality & Pre-Improvement Checklist](docs/CORE_FUNCTIONALITY_CHECKLIST.md)**: Mandatory checklist before any improvement to protect auto-start, multi-IDE/agent capture, and PostgreSQL persistence.
 - 📋 **[Phase-Wise Implementation Plan (Vault 2.0)](docs/PHASE_WISE_IMPLEMENTATION_PLAN.md)**: Full gap analysis, mathematical formulas, and milestone specifications.
 - ⚙️ **[CI/CD Pipeline & Pre-Deployment Verification Gates](docs/CI_CD_PIPELINE.md)**: Detailed breakdown of GitHub Actions workflows and verification checks.
 - 🏛️ **[System Architecture Guide](docs/System-Architecture-Guide.md)**: In-depth technical architecture, vector schemas, and provider profiles.
-- 🧭 **[Core Architecture Reference](docs/ARCHITECTURE.md)**: Existing subsystem design, MCP, search, and domain models.
+- 🧭 **[Core Architecture Reference](docs/ARCHITECTURE.md)**: Subsystem design, code/schema snippets, MCP, search, and domain models.
 - 🛡️ **[Production-Readiness Audit Report](docs/PRODUCTION_READINESS_REPORT.md)**: 15-dimension security and architecture audit.
 - 💾 **[Backup & Disaster Recovery Guide](docs/BACKUP_AND_RECOVERY.md)**: Disaster recovery, `pg_dump`, WAL archiving, and restore runbooks.
+- 🔄 **[PostgreSQL High Availability (HA) Patterns](docs/POSTGRESQL_HA.md)**: Patroni streaming replication, CloudNativePG, PgBouncer, and `pgvector` HNSW tuning.
+- 🎓 **[AI Backend Engineer Interview Guide (L1 & L2)](docs/INTERVIEW_PREP_L1_L2.md)**: Project-grounded L1 & L2 interview questions and answers for 2-year AI Backend Engineers.

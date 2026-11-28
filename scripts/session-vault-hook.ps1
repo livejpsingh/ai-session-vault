@@ -122,7 +122,7 @@ try {
 
     $apiKey = Get-Setting "VAULT_API_KEY"
     if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        $apiKey = "vault-secret-key-2026"
+        throw "VAULT_API_KEY is not configured in environment or .env"
     }
     $headers = @{ "X-API-KEY" = $apiKey }
 

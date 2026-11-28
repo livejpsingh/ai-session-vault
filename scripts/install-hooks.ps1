@@ -13,7 +13,7 @@
 [CmdletBinding()]
 param(
     [string]$VaultUrl = "http://localhost:8080",
-    [string]$ApiKey = "vault-secret-key-2026"
+    [string]$ApiKey = $env:VAULT_API_KEY
 )
 
 $ErrorActionPreference = "Stop"
@@ -110,9 +110,9 @@ $tasksContent = @'
     {
       "label": "AI Session Vault: Verify Health & DB Stats",
       "type": "shell",
-      "command": "curl -s -H \"X-API-KEY: vault-secret-key-2026\" http://localhost:8080/api/sessions",
+      "command": "curl -s -H \"X-API-KEY: ${VAULT_API_KEY}\" http://localhost:8080/api/sessions",
       "windows": {
-        "command": "powershell.exe -NoProfile -Command \"Invoke-RestMethod -Uri http://localhost:8080/api/sessions -Headers @{'X-API-KEY'='vault-secret-key-2026'}\""
+        "command": "powershell.exe -NoProfile -Command \"Invoke-RestMethod -Uri http://localhost:8080/api/sessions -Headers @{'X-API-KEY'=$env:VAULT_API_KEY}\""
       },
       "problemMatcher": []
     }

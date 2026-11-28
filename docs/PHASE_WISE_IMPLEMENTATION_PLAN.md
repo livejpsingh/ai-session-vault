@@ -300,6 +300,6 @@ ORDER BY sequence_number ASC;
 ```
 3. **Verify via REST API:**
 ```bash
-curl -s -H "X-API-KEY: vault-secret-key-2026" http://localhost:8080/api/sessions
+curl -s -H "X-API-KEY: ${VAULT_API_KEY:?Set VAULT_API_KEY}" http://localhost:8080/api/sessions
 ```
 4. **Inspect in Swagger UI:** Open [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) in your browser.

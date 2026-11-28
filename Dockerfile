@@ -1,5 +1,5 @@
 # Stage 1: Runtime
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 LABEL maintainer="AI Session Vault Team"
 LABEL description="Production Docker image for AI Session Vault MCP Server"

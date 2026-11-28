@@ -174,10 +174,16 @@ public class ContextOptimizationEngineImpl implements ContextOptimizationEngine 
         // Safety invariant: Ensure rendered string doesn't breach budget
         if (finalTokens > budget && !selectedItems.isEmpty()) {
             // Trim from lowest priority until within budget
-            while (finalTokens > budget && selectedItems.size() > 1) {
-                selectedItems.remove(selectedItems.size() - 1);
+            while (finalTokens > budget && !selectedItems.isEmpty()) {
+                OptimizedContextItem removed = selectedItems.remove(selectedItems.size() - 1);
                 renderedMarkdown = renderContextMarkdown(selectedItems);
                 finalTokens = countTokens(renderedMarkdown);
+                if (selectedItems.isEmpty() && finalTokens > budget) {
+                    renderedMarkdown = "";
+                    finalTokens = 0;
+                    warnings.add("Budget (" + budget + " tokens) too small to fit rendered context for: "
+                            + truncate(removed.getContent(), 40));
+                }
             }
         }
 
